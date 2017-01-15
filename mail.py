@@ -34,14 +34,14 @@ def get_names(path):
     if not os.path.exists(path):
         print('Wrong names csv path')
         return None
-    return pandas.read_csv('names.csv')
+    return pandas.read_csv(path)
 
 
 def get_dataframe(path):
     if not os.path.exists(path):
         print('Wrong smtps csv path')
         return None
-    return pandas.read_csv('smtp.csv')
+    return pandas.read_csv(path)
 
 
 def compose_mail(receiver_name, smtp_login):
