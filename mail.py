@@ -58,8 +58,8 @@ def compose_mail(receiver_name, smtp_login):
     return mail
 
 
-def get_random_smtp():
-    smtp_number_to_use = random.randint(0, smtp_qnt - 1)
+def get_random_smtp(smtp_number):
+    smtp_number_to_use = random.randint(0, smtp_number - 1)
     return smtp_dataframe.ix[smtp_number_to_use]
 
 
@@ -86,7 +86,7 @@ if __name__ == '__main__':
     smtp_qnt = len(smtp_dataframe)
     for index, row in names_dataframe.iterrows():
         name, email_address = row['name'], row['mail']
-        random_smtp = get_random_smtp()
+        random_smtp = get_random_smtp(smtp_qnt)
         mail_from = random_smtp['login']
         message = compose_mail(name, mail_from)
         send_mail(random_smtp, message)
