@@ -1,0 +1,4 @@
+smtp,port,login,pass
+smtp.gmail.com,587,test@gmail.com,test
+smtp.yandex.ru,465,test@yandex.ru,1234
+smtp.mail.ru,465,test@mail.ru,qwerty
