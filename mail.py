@@ -37,7 +37,7 @@ def get_names(path):
     return pandas.read_csv(path)
 
 
-def get_dataframe(path):
+def get_smtps(path):
     if not os.path.exists(path):
         print('Wrong smtps csv path')
         return None
@@ -82,7 +82,7 @@ def send_mail(smtp_data, mail):
 if __name__ == '__main__':
     names_path, smtp_path = parse_arguments()
     names_dataframe = get_names(names_path)
-    smtp_dataframe = get_dataframe(smtp_path)
+    smtp_dataframe = get_smtps(smtp_path)
     smtp_qnt = len(smtp_dataframe)
     for index, row in names_dataframe.iterrows():
         name, email_address = row['name'], row['mail']
