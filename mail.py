@@ -46,7 +46,7 @@ def get_smtps(path):
 
 def get_html_template(path):
     if os.path.exists(path):
-        with open(path, 'r', encoding='utf-8') as file_handler:
+        with open(path, 'r') as file_handler:
             return file_handler.read()
 
 
