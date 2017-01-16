@@ -1,22 +1,12 @@
 import smtplib
-import pandas
+import csv
 import random
 import argparse
 import os
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-mail_text_template = "Hi, {}!\nHow are you?\n"
-mail_html_template = """\
-    <html>
-      <head></head>
-      <body>
-        <p>Hi, {}!<br>
-           How are you?<br>
-        </p>
-      </body>
-    </html>
-    """
+SUBJECT = 'Hello'
 
 
 def parse_arguments():
@@ -26,44 +16,57 @@ def parse_arguments():
                         type=str, help='path to names csv')
     parser.add_argument('path_to_smtp', type=str,
                         help='path to smtps')
+    parser.add_argument('path_to_html_template', type=str, help='path to html'
+                                                                'template')
     arguments = parser.parse_args()
-    return arguments.path_to_names, arguments.path_to_smtp
+    return (arguments.path_to_names,
+            arguments.path_to_smtp,
+            arguments.path_to_html_template)
 
 
 def get_names(path):
     if not os.path.exists(path):
-        print('Wrong names csv path')
         return None
-    return pandas.read_csv(path)
+    else:
+        with open(path, 'r') as csvfile:
+            names = csv.DictReader(csvfile, delimiter=',')
+            names_mails_list = [x for x in names]
+    return names_mails_list
 
 
 def get_smtps(path):
     if not os.path.exists(path):
-        print('Wrong smtps csv path')
         return None
-    return pandas.read_csv(path)
+    else:
+        with open(path, 'r') as csvfile:
+            smtps = csv.DictReader(csvfile, delimiter=',')
+            smtps_list = [x for x in smtps]
+    return smtps_list
 
 
-def compose_mail(receiver_name, smtp_login):
-    mail_text = mail_text_template.format(receiver_name)
-    mail_html = mail_html_template.format(receiver_name)
+def get_html_template(path):
+    if os.path.exists(path):
+        with open(path, 'r', encoding='utf-8') as file_handler:
+            return file_handler.read()
+
+
+def compose_mail(receiver_name, receiver_address, from_name,
+                 html_template, subject):
+    mail_html = html_template.format(subject=subject, name=receiver_name)
     mail = MIMEMultipart('alternative')
-    mail['Subject'] = "Hello, {}!".format(receiver_name)
-    mail['From'] = smtp_login
-    mail['To'] = email_address
-    part1 = MIMEText(mail_text, 'plain')
-    part2 = MIMEText(mail_html, 'html')
-    mail.attach(part1)
-    mail.attach(part2)
+    mail['Subject'] = subject
+    mail['From'] = from_name
+    mail['To'] = receiver_address
+    mail.attach(MIMEText(mail_html, 'html'))
     return mail
 
 
-def get_random_smtp(smtp_number):
+def get_random_smtp(smtps_list, smtp_number):
     smtp_number_to_use = random.randint(0, smtp_number - 1)
-    return smtp_dataframe.ix[smtp_number_to_use]
+    return smtps_list[smtp_number_to_use]
 
 
-def send_mail(smtp_data, mail):
+def send_mail(smtp_data, mail, receiver_address):
     smtp_server = smtp_data['smtp']
     smtp_port = int(smtp_data['port'])
     smtp_login = smtp_data['login']
@@ -76,19 +79,25 @@ def send_mail(smtp_data, mail):
         mail_server = smtplib.SMTP_SSL('{}:{}'.format(smtp_server, smtp_port))
         mail_server.ehlo()
     mail_server.login(smtp_login, smtp_password)
-    mail_server.sendmail(smtp_login, email_address, mail.as_string())
+    mail_server.sendmail(smtp_login, receiver_address, mail.as_string())
     mail_server.quit()
 
 if __name__ == '__main__':
-    names_path, smtp_path = parse_arguments()
-    names_dataframe = get_names(names_path)
-    smtp_dataframe = get_smtps(smtp_path)
-    smtp_qnt = len(smtp_dataframe)
-    for index, row in names_dataframe.iterrows():
-        name, email_address = row['name'], row['mail']
-        random_smtp = get_random_smtp(smtp_qnt)
-        mail_from = random_smtp['login']
-        message = compose_mail(name, mail_from)
-        send_mail(random_smtp, message)
+    names_path, smtp_path, html_template_path = parse_arguments()
 
+    mail_html_template = get_html_template(html_template_path)
+    names_list = get_names(names_path)
+    smtp_list = get_smtps(smtp_path)
 
+    if names_list and smtp_list and mail_html_template:
+        smtp_qnt = len(smtp_list)
+        for address in names_list:
+            name, email_address = address['name'], address['mail']
+            random_smtp = get_random_smtp(smtp_list, smtp_qnt)
+            mail_from = random_smtp['login']
+            message = compose_mail(name, email_address, mail_from,
+                                   mail_html_template, SUBJECT)
+            send_mail(random_smtp, message, email_address)
+        print('Successful')
+    else:
+        print('Check files paths')
